@@ -1,17 +1,60 @@
-# sukisave
+# SukiSave
 
-A new Flutter project.
+SukiSave is a Flutter mobile app for discovering discounted local food and essentials, adding products to a cart, checking out selected items, and viewing past purchases. The app uses local SQLite storage for user accounts and order history.
 
-## Getting Started
+## Tech Stack
 
-This project is a starting point for a Flutter application.
+- Flutter / Dart
+- Material UI
+- SQLite via `sqflite`
+- `shared_preferences` for session storage
+- `flutter_map` for map UI
 
-A few resources to get you started if this is your first Flutter project:
+## Requirements
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Flutter SDK installed
+- Android Studio or VS Code with Flutter/Dart extensions
+- Android emulator, iOS simulator, or a physical device
+- Git
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Check your local setup:
+
+```bash
+flutter doctor
+```
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/jiro0823/Sukisave.git
+cd Sukisave
+```
+
+Install dependencies:
+
+```bash
+flutter pub get
+```
+
+Run the app:
+
+```bash
+flutter run
+```
+
+## Useful Commands
+
+```bash
+flutter analyze
+flutter test
+flutter clean
+flutter pub get
+```
+
+## Project Notes
+
+- Do not commit generated folders such as `build/`, `.dart_tool/`, or `node_modules/`.
+- Local app data is stored on-device using SQLite and shared preferences.
+- If the app database schema changes during development, uninstall the app or clear app storage before testing again.
