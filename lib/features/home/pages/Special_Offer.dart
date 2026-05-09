@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sukisave/core/widgets/app_bottom_nav.dart';
-import 'package:sukisave/core/state/cart_store.dart';
+import 'package:sukisave/core/widgets/cart_feedback.dart';
 import 'package:sukisave/core/widgets/product_card.dart';
 import 'package:sukisave/core/widgets/product_detail.dart';
 import 'package:sukisave/core/widgets/product_grid.dart';
+import 'package:sukisave/core/services/product_service.dart';
+import 'package:sukisave/core/utils/product_mapper.dart';
 import 'package:sukisave/features/home/pages/landing_page.dart';
 
 class SpecialOfferPage extends StatefulWidget {
@@ -16,99 +18,47 @@ class SpecialOfferPage extends StatefulWidget {
 class _SpecialOfferPageState extends State<SpecialOfferPage> {
   static const Color _brandGreen = Color(0xFF0F5513);
   int _currentIndex = 0;
+  bool _isLoading = true;
+  List<ProductCardData> _specialOffers = [];
 
-  late final List<ProductCardData> _specialOffers = [
-    ProductCardData(
-      id: 1,
-      title: 'Lomi Panabo',
-      price: 100,
-      category: 'Food',
-      quantityLeft: 3,
-      expiresAt: DateTime.now().add(const Duration(hours: 2, minutes: 40)),
-      imagePath: 'assets/images/Product-image/lomi.png',
-    ),
-    ProductCardData(
-      id: 2,
-      title: 'Sisig',
-      price: 150,
-      category: 'Food',
-      quantityLeft: 5,
-      expiresAt: DateTime.now().add(const Duration(hours: 3, minutes: 10)),
-      imagePath: 'assets/images/Product-image/Sisig.png',
-    ),
-    ProductCardData(
-      id: 3,
-      title: 'Minute Burger',
-      price: 90,
-      category: 'Food',
-      quantityLeft: 8,
-      expiresAt: DateTime.now().add(const Duration(hours: 1, minutes: 20)),
-      imagePath: 'assets/images/Product-image/hamburger.png',
-    ),
-    ProductCardData(
-      id: 4,
-      title: 'Kalderita',
-      price: 170,
-      category: 'Food',
-      quantityLeft: 3,
-      expiresAt: DateTime.now().add(const Duration(hours: 4, minutes: 5)),
-      imagePath: 'assets/images/Product-image/kalderita.png',
-    ),
-    ProductCardData(
-      id: 5,
-      title: 'Beef Steak',
-      price: 145,
-      category: 'Food',
-      quantityLeft: 6,
-      expiresAt: DateTime.now().add(const Duration(hours: 2, minutes: 50)),
-      imagePath: 'assets/images/Product-image/beef-steak.png',
-    ),
-    ProductCardData(
-      id: 6,
-      title: 'Pastil',
-      price: 35,
-      category: 'Food',
-      quantityLeft: 7,
-      expiresAt: DateTime.now().add(const Duration(hours: 5, minutes: 15)),
-      imagePath: 'assets/images/Product-image/pastil.png',
-    ),
-    ProductCardData(
-      id: 7,
-      title: 'Lettuce',
-      price: 25,
-      category: 'Ingredients',
-      quantityLeft: 16,
-      expiresAt: DateTime.now().add(const Duration(hours: 8, minutes: 5)),
-      imagePath: 'assets/images/Product-image/Lettuce.png',
-    ),
-    ProductCardData(
-      id: 8,
-      title: 'Kalabasa',
-      price: 40,
-      category: 'Ingredients',
-      quantityLeft: 9,
-      expiresAt: DateTime.now().add(const Duration(hours: 6, minutes: 45)),
-      imagePath: 'assets/images/Product-image/kalabasa.png',
-    ),
-    ProductCardData(
-      id: 9,
-      title: 'Palm Oil',
-      price: 70,
-      category: 'Ingredients',
-      quantityLeft: 2,
-      expiresAt: DateTime.now().add(const Duration(hours: 24, minutes: 45)),
-      imagePath: 'assets/images/Product-image/cooking-oil.png',
-    ),
-    ProductCardData(
-      id: 10,
-      title: 'Pares',
-      price: 80,
-      category: 'Food',
-      quantityLeft: 6,
-      expiresAt: DateTime.now().add(const Duration(hours: 2, minutes: 45)),
-      imagePath: 'assets/images/Product-image/paris.png',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    ProductService.stockChanges.addListener(_handleStockChanged);
+    _loadProducts();
+  }
+
+  @override
+  void dispose() {
+    ProductService.stockChanges.removeListener(_handleStockChanged);
+    super.dispose();
+  }
+
+  void _handleStockChanged() {
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    final data = await ProductService().getAll();
+    if (!mounted) return;
+
+    setState(() {
+      _specialOffers = data.map(mapProductToCard).toList();
+      _isLoading = false;
+    });
+  }
+
+  List<ProductCardData> get _visibleOffers {
+    final now = DateTime.now();
+    return _specialOffers
+        .where((product) => product.expiresAt.isAfter(now))
+        .toList();
+  }
 
   void _goBackToLanding() {
     if (Navigator.of(context).canPop()) {
@@ -172,25 +122,32 @@ class _SpecialOfferPageState extends State<SpecialOfferPage> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              child: ProductGrid(
-                products: _specialOffers,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.76,
-                onProductTap: (product) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProductDetailPage(
-                        product: product,
-                        relatedProducts: _specialOffers,
-                      ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _visibleOffers.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: Text('No products available')),
+                    )
+                  : ProductGrid(
+                      products: _visibleOffers,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.76,
+                      onProductTap: (product) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ProductDetailPage(
+                              product: product,
+                              relatedProducts: _specialOffers,
+                            ),
+                          ),
+                        );
+                      },
+                      onAddToCart: (product) {
+                        CartFeedback.addProduct(context, product);
+                      },
                     ),
-                  );
-                },
-                onAddToCart: (product) {
-                  CartStore.instance.add(product);
-                },
-              ),
             ),
           ),
         ],

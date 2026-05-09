@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukisave/core/widgets/app_image.dart';
 
 class ProductCardData {
   final int id;
@@ -8,18 +9,30 @@ class ProductCardData {
   final int quantityLeft;
   final DateTime expiresAt;
   final String imagePath;
-  
+
   ProductCardData copy() {
-  return ProductCardData(
-    id: id,
-    title: title,
-    price: price,
-    category: category,
-    quantityLeft: quantityLeft,
-    expiresAt: expiresAt,
-    imagePath: imagePath,
-  );
-}
+    return ProductCardData(
+      id: id,
+      title: title,
+      price: price,
+      category: category,
+      quantityLeft: quantityLeft,
+      expiresAt: expiresAt,
+      imagePath: imagePath,
+    );
+  }
+
+  ProductCardData copyWith({int? quantityLeft}) {
+    return ProductCardData(
+      id: id,
+      title: title,
+      price: price,
+      category: category,
+      quantityLeft: quantityLeft ?? this.quantityLeft,
+      expiresAt: expiresAt,
+      imagePath: imagePath,
+    );
+  }
 
   const ProductCardData({
     required this.id,
@@ -62,6 +75,8 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isSoldOut = data.quantityLeft <= 0;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -104,7 +119,7 @@ class ProductCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Text(
-                          '${data.quantityLeft} left',
+                          isSoldOut ? 'Sold out' : '${data.quantityLeft} left',
                           style: const TextStyle(
                             color: Colors.red,
                             fontSize: 10,
@@ -132,13 +147,11 @@ class ProductCard extends StatelessWidget {
                 flex: 5,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    data.imagePath,
+                  child: AppImage(
+                    path: data.imagePath,
                     width: double.infinity,
-                    fit: BoxFit.cover, // 🔥 best for UI
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(child: Icon(Icons.broken_image));
-                    },
+                    fit: BoxFit.cover,
+                    errorWidget: const Center(child: Icon(Icons.broken_image)),
                   ),
                 ),
               ),
@@ -189,7 +202,9 @@ class ProductCard extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: onAddToCart,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _brandGreen,
+                              backgroundColor: isSoldOut
+                                  ? const Color(0xFF9E9E9E)
+                                  : _brandGreen,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -197,9 +212,9 @@ class ProductCard extends StatelessWidget {
                               shape: const StadiumBorder(),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            child: const Text(
-                              'Buy now',
-                              style: TextStyle(
+                            child: Text(
+                              isSoldOut ? 'Sold out' : 'Buy now',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sukisave/core/state/cart_store.dart';
+import 'package:sukisave/core/widgets/cart_feedback.dart';
 import 'package:sukisave/core/widgets/product_card.dart';
 
 class ProductGrid extends StatelessWidget {
@@ -69,7 +69,7 @@ class ProductGrid extends StatelessWidget {
             if (onAddToCart != null) {
               onAddToCart!(product);
             } else {
-              CartStore.instance.add(product);
+              CartFeedback.addProduct(context, product);
             }
           },
         );

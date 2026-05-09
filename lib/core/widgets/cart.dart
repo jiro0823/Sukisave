@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:sukisave/features/home/pages/payment.dart';
 import 'package:sukisave/core/state/cart_store.dart';
+import 'package:sukisave/core/state/vendor_order_store.dart';
+import 'package:sukisave/core/widgets/app_image.dart';
+import 'package:sukisave/features/home/pages/activities.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -57,8 +59,6 @@ class _CartPageState extends State<CartPage> {
   bool get _isAllSelected =>
       _items.isNotEmpty && _selectedIds.length == _items.length;
 
-  bool get _hasSelection => _selectedIds.isNotEmpty;
-
   Iterable<_CartItem> get _activeItems =>
       _items.where((item) => _selectedIds.contains(item.id));
 
@@ -68,26 +68,44 @@ class _CartPageState extends State<CartPage> {
   int get _activeCount =>
       _activeItems.fold(0, (sum, item) => sum + item.quantity);
 
-  void _adjustActiveQuantities(int delta) {
+  Future<void> _adjustActiveQuantities(int delta) async {
     if (_items.isEmpty) return;
 
-    final List<_CartItem> toRemove = [];
-
-    setState(() {
-      for (final item in _activeItems.toList()) {
-        final nextQuantity = item.quantity + delta;
-        if (nextQuantity <= 0) {
-          toRemove.add(item);
+    for (final item in _activeItems.toList()) {
+      if (delta > 0) {
+        final result = await CartStore.instance.increase(item.id);
+        if (!mounted) return;
+        if (result.isSoldOut) {
+          await _showSoldOutDialog(item.name);
+        }
+      } else {
+        await CartStore.instance.decrease(item.id);
+        if (!mounted) return;
+        final stillInCart = CartStore.instance.items.any(
+          (cartItem) => cartItem.product.id == item.id,
+        );
+        if (!stillInCart) {
           _selectedIds.remove(item.id);
-        } else {
-          item.quantity = nextQuantity;
         }
       }
+    }
+  }
 
-      if (toRemove.isNotEmpty) {
-        _items.removeWhere(toRemove.contains);
-      }
-    });
+  Future<void> _showSoldOutDialog(String productName) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Sold out'),
+        content: Text('$productName is currently sold out.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _toggleAll(bool? value) {
@@ -113,6 +131,69 @@ class _CartPageState extends State<CartPage> {
   }
 
   TextStyle get _geistBase => const TextStyle(fontFamily: 'Geist');
+
+  Future<void> _startVendorApprovalFlow() async {
+    final activeItems = _activeItems.toList();
+    if (activeItems.isEmpty) return;
+
+    final VendorOrderStore store = VendorOrderStore.instance;
+    final requests = activeItems.map((item) {
+      return store.createRequest(
+        productId: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        quantity: item.quantity,
+        imagePath: item.imagePath,
+      );
+    }).toList();
+
+    store.addRequests(requests);
+    await CartStore.instance.removeAll(
+      activeItems.map((item) => item.id).toSet(),
+      restoreStock: false,
+    );
+    setState(() {
+      _selectedIds.clear();
+      _loadCartItems();
+    });
+
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Waiting for vendor confirmation',
+            style: TextStyle(
+              fontFamily: 'Geist',
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          content: const Text(
+            'Please wait while the vendor accepts or declines your order.',
+            style: TextStyle(
+              fontFamily: 'Geist',
+              fontSize: 12,
+              color: _mutedGray,
+            ),
+          ),
+        );
+      },
+    );
+
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ReceiptPage()));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +257,7 @@ class _CartPageState extends State<CartPage> {
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
               itemCount: _items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final item = _items[index];
                 return _CartCard(
@@ -242,15 +323,7 @@ class _CartPageState extends State<CartPage> {
                   child: ElevatedButton(
                     onPressed: _activeCount == 0
                         ? null
-                        : () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    PaymentPage(items: _activeItems.toList()),
-                              ),
-                            );
-                          },
+                        : _startVendorApprovalFlow,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       disabledBackgroundColor: Colors.white70,
@@ -316,14 +389,12 @@ class _CartCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              ClipRRect(
+              AppImage(
+                path: item.imagePath,
+                width: 64,
+                height: 64,
+                fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(40),
-                child: Image.asset(
-                  item.imagePath,
-                  width: 64,
-                  height: 64,
-                  fit: BoxFit.cover,
-                ),
               ),
               const SizedBox(width: 12),
               Expanded(

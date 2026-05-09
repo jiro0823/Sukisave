@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase._();
 
   static final AppDatabase instance = AppDatabase._();
-  static const int _version = 2;
+  static const int _version = 4;
 
   Database? _database;
 
@@ -24,10 +24,17 @@ class AppDatabase {
       onCreate: (db, version) async {
         await _createUsersTable(db);
         await _createOrderItemsTable(db);
+        await _createProductsTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await _createOrderItemsTable(db);
+        }
+        if (oldVersion < 3) {
+          await _createProductsTable(db);
+        }
+        if (oldVersion < 4) {
+          await db.execute('ALTER TABLE users ADD COLUMN logo_path TEXT');
         }
       },
     );
@@ -46,6 +53,7 @@ class AppDatabase {
         business_type TEXT,
         region TEXT,
         city TEXT,
+        logo_path TEXT,
         password_salt TEXT NOT NULL,
         password_hash TEXT NOT NULL,
         created_at TEXT NOT NULL
@@ -65,6 +73,23 @@ class AppDatabase {
         quantity INTEGER NOT NULL,
         image_path TEXT NOT NULL,
         purchased_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createProductsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        vendor_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        price REAL NOT NULL,
+        quantity INTEGER NOT NULL,
+        category TEXT NOT NULL,
+        image_path TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
       )
     ''');
   }

@@ -4,8 +4,13 @@ import 'package:sukisave/core/widgets/payment_confirmation.dart';
 
 class PaymentPage extends StatefulWidget {
   final List<dynamic> items; // accept passed items
+  final Set<int> pendingRequestIds;
 
-  const PaymentPage({super.key, required this.items});
+  const PaymentPage({
+    super.key,
+    required this.items,
+    this.pendingRequestIds = const <int>{},
+  });
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -264,6 +269,8 @@ class _PaymentPageState extends State<PaymentPage> {
                                       builder: (_) => PaymentConfirmationPage(
                                         paidProductIds: _paidProductIds,
                                         paidItems: _paidItems,
+                                        pendingRequestIds:
+                                            widget.pendingRequestIds,
                                       ),
                                     ),
                                   );

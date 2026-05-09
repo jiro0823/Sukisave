@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sukisave/core/services/auth_service.dart';
 import 'package:sukisave/features/home/pages/landing_page.dart';
-import 'package:sukisave/features/vendor/vendor-dashboard.dart';
+import 'package:sukisave/features/vendor/pages/vendor-dashboard.dart';
 
 import 'signup_users.dart';
 import 'signup_vendor.dart';
@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (user.role == 'vendor') {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const VendorDashboardPage()),
+          MaterialPageRoute(builder: (_) => const VendorDashboard()),
         );
       } else {
         Navigator.of(context).pushReplacement(

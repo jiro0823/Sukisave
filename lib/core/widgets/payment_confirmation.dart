@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:sukisave/core/models/purchased_product.dart';
 import 'package:sukisave/core/services/order_history_service.dart';
 import 'package:sukisave/core/state/cart_store.dart';
+import 'package:sukisave/core/state/vendor_order_store.dart';
 
 class PaymentConfirmationPage extends StatefulWidget {
   final Set<int> paidProductIds;
   final List<PurchasedProduct> paidItems;
+  final Set<int> pendingRequestIds;
 
   const PaymentConfirmationPage({
     super.key,
     required this.paidProductIds,
     required this.paidItems,
+    this.pendingRequestIds = const <int>{},
   });
 
   @override
@@ -127,7 +130,12 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
       return;
     }
 
-    CartStore.instance.removeAll(widget.paidProductIds);
+    VendorOrderStore.instance.removeByRequestIds(widget.pendingRequestIds);
+    await CartStore.instance.removeAll(
+      widget.paidProductIds,
+      restoreStock: false,
+    );
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/landing');
   }
 }

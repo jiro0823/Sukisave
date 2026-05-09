@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sukisave/core/services/auth_service.dart';
+import 'package:sukisave/core/widgets/profile_details.dart';
 
 class ProfileViewPage extends StatefulWidget {
   const ProfileViewPage({super.key});
@@ -9,9 +10,6 @@ class ProfileViewPage extends StatefulWidget {
 }
 
 class _ProfileViewPageState extends State<ProfileViewPage> {
-  static const Color _brandGreen = Color(0xFF0F5513);
-  static const Color _panelWhite = Color(0xFFF3F3F3);
-
   String _name = '';
   String _email = '';
   String _phone = '';
@@ -75,198 +73,26 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _panelWhite,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              color: _brandGreen,
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => Navigator.of(context).maybePop(),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: _brandGreen,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Profile',
-                    style: TextStyle(
-                      fontFamily: 'Geist',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _infoPanel(label: 'Name', value: _name, onEdit: () {}),
-                    const SizedBox(height: 12),
-                    _infoPanel(label: 'Email', value: _email, onEdit: () {}),
-                    const SizedBox(height: 12),
-                    _infoPanel(
-                      label: 'Mobile number',
-                      value: _phone,
-                      onEdit: () {},
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'Connected accounts',
-                      style: TextStyle(
-                        fontFamily: 'Geist',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: _brandGreen,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _connectedPanel(
-                      iconPath: 'assets/images/profile/fb.png',
-                      label: 'Facebook',
-                      status: 'Not connected',
-                    ),
-                    const SizedBox(height: 12),
-                    _connectedPanel(
-                      iconPath: 'assets/images/profile/google.png',
-                      label: 'Google',
-                      status: 'Connected',
-                    ),
-                    const SizedBox(height: 18),
-                    GestureDetector(
-                      onTap: _confirmDelete,
-                      child: const Text(
-                        'Delete account',
-                        style: TextStyle(
-                          fontFamily: 'Geist',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+    return ProfileDetailsPage(
+      title: 'Profile',
+      details: [
+        ProfileDetailItem(label: 'Name', value: _name),
+        ProfileDetailItem(label: 'Email', value: _email),
+        ProfileDetailItem(label: 'Mobile number', value: _phone),
+      ],
+      connectedAccounts: const [
+        ConnectedAccountItem(
+          iconPath: 'assets/images/profile/fb.png',
+          label: 'Facebook',
+          status: 'Not connected',
         ),
-      ),
-    );
-  }
-
-  Widget _infoPanel({
-    required String label,
-    required String value,
-    required VoidCallback onEdit,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Geist',
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontFamily: 'Geist',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, color: _brandGreen),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _connectedPanel({
-    required String iconPath,
-    required String label,
-    required String status,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Image.asset(iconPath, width: 28, height: 28),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Geist',
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  status,
-                  style: const TextStyle(
-                    fontFamily: 'Geist',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.edit_outlined, color: _brandGreen),
-        ],
-      ),
+        ConnectedAccountItem(
+          iconPath: 'assets/images/profile/google.png',
+          label: 'Google',
+          status: 'Connected',
+        ),
+      ],
+      onDeleteAccount: _confirmDelete,
     );
   }
 }

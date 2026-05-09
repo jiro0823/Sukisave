@@ -34,6 +34,7 @@ class AuthService {
     String? businessType,
     String? region,
     String? city,
+    String? logoPath,
   }) async {
     await _ensureReady();
     final Database db = await AppDatabase.instance.database;
@@ -63,6 +64,7 @@ class AuthService {
       'business_type': businessType,
       'region': region,
       'city': city,
+      'logo_path': logoPath,
       'password_salt': salt,
       'password_hash': passwordHash,
       'created_at': createdAt,
@@ -79,6 +81,7 @@ class AuthService {
       businessType: businessType,
       region: region,
       city: city,
+      logoPath: logoPath,
       passwordSalt: salt,
       passwordHash: passwordHash,
       createdAt: createdAt,

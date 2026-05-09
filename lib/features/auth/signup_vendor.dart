@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sukisave/core/services/auth_service.dart';
-import 'package:sukisave/features/vendor/vendor-dashboard.dart';
+import 'package:sukisave/core/widgets/app_image.dart';
+import 'package:sukisave/features/vendor/pages/vendor-dashboard.dart';
 
 import 'login_page.dart';
 
@@ -20,6 +22,8 @@ class _SignupVendorPageState extends State<SignupVendorPage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
+  String? _logoPath;
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> _businessTypes = <String>[
     'Food & Beverage',
@@ -83,6 +87,14 @@ class _SignupVendorPageState extends State<SignupVendorPage> {
     setState(() {
       _strength = nextStrength;
       _strengthLabel = nextLabel;
+    });
+  }
+
+  Future<void> _pickLogoPath() async {
+    final XFile? picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+    setState(() {
+      _logoPath = picked.path;
     });
   }
 
@@ -158,9 +170,7 @@ class _SignupVendorPageState extends State<SignupVendorPage> {
               const SizedBox(height: 12),
               Center(
                 child: InkWell(
-                  onTap: () {
-                    _showMessage('Logo upload not configured yet.');
-                  },
+                  onTap: _pickLogoPath,
                   borderRadius: BorderRadius.circular(28),
                   child: Container(
                     width: 56,
@@ -170,11 +180,33 @@ class _SignupVendorPageState extends State<SignupVendorPage> {
                       border: Border.all(color: const Color(0xFFE0E0E0)),
                       borderRadius: BorderRadius.circular(28),
                     ),
-                    child: const Icon(
-                      Icons.file_upload_outlined,
-                      color: _brandGreen,
-                      size: 28,
-                    ),
+                    child: _logoPath == null || _logoPath!.isEmpty
+                        ? const Icon(
+                            Icons.file_upload_outlined,
+                            color: _brandGreen,
+                            size: 28,
+                          )
+                        : AppImage(
+                            path: _logoPath!,
+                            borderRadius: BorderRadius.circular(28),
+                            fit: BoxFit.cover,
+                            errorWidget: const Icon(
+                              Icons.file_upload_outlined,
+                              color: _brandGreen,
+                              size: 28,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Center(
+                child: Text(
+                  'Upload logo (optional)',
+                  style: TextStyle(
+                    fontFamily: 'Geist',
+                    fontSize: 12,
+                    color: Color(0xFF9E9E9E),
                   ),
                 ),
               ),
@@ -467,11 +499,12 @@ class _SignupVendorPageState extends State<SignupVendorPage> {
         businessType: _selectedType,
         region: _selectedRegion,
         city: _selectedCity,
+        logoPath: (_logoPath == null || _logoPath!.isEmpty) ? null : _logoPath,
       );
       if (!mounted) return;
       _showMessage('Vendor account created.');
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const VendorDashboardPage()),
+        MaterialPageRoute(builder: (_) => const VendorDashboard()),
       );
     } on AuthException catch (error) {
       _showMessage(error.message);

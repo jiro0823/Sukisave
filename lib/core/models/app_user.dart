@@ -9,6 +9,7 @@ class AppUser {
   final String? businessType;
   final String? region;
   final String? city;
+  final String? logoPath;
   final String passwordSalt;
   final String passwordHash;
   final String createdAt;
@@ -27,6 +28,7 @@ class AppUser {
     this.businessType,
     this.region,
     this.city,
+    this.logoPath,
   });
 
   AppUser copyWith({
@@ -40,6 +42,7 @@ class AppUser {
     String? businessType,
     String? region,
     String? city,
+    String? logoPath,
     String? passwordSalt,
     String? passwordHash,
     String? createdAt,
@@ -55,6 +58,7 @@ class AppUser {
       businessType: businessType ?? this.businessType,
       region: region ?? this.region,
       city: city ?? this.city,
+      logoPath: logoPath ?? this.logoPath,
       passwordSalt: passwordSalt ?? this.passwordSalt,
       passwordHash: passwordHash ?? this.passwordHash,
       createdAt: createdAt ?? this.createdAt,
@@ -73,6 +77,7 @@ class AppUser {
       'business_type': businessType,
       'region': region,
       'city': city,
+      'logo_path': logoPath,
       'password_salt': passwordSalt,
       'password_hash': passwordHash,
       'created_at': createdAt,
@@ -91,6 +96,7 @@ class AppUser {
       businessType: map['business_type'] as String?,
       region: map['region'] as String?,
       city: map['city'] as String?,
+      logoPath: map['logo_path'] as String?,
       passwordSalt: map['password_salt'] as String,
       passwordHash: map['password_hash'] as String,
       createdAt: map['created_at'] as String,

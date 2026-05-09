@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sukisave/core/widgets/app_bottom_nav.dart';
 import 'package:sukisave/core/widgets/hero_section.dart';
-import 'package:sukisave/core/state/cart_store.dart';
+import 'package:sukisave/core/widgets/cart_feedback.dart';
 import 'package:sukisave/core/widgets/product_card.dart';
 import 'package:sukisave/core/widgets/product_grid.dart';
+import 'package:sukisave/core/services/product_service.dart';
+import 'package:sukisave/core/utils/product_mapper.dart';
 import 'package:sukisave/features/home/pages/Special_Offer.dart';
 import 'package:sukisave/core/widgets/product_detail.dart';
 
@@ -17,10 +19,12 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage> {
   int _currentIndex = 0;
   String _selectedCategory = 'All';
+  bool _isLoading = true;
+  List<ProductCardData> _products = [];
 
   static const Color _brandGreen = Color.fromARGB(255, 15, 85, 19);
 
-  final List<String> _categories = const [
+  final List<String> _defaultCategories = const [
     'Food',
     'Ingredients',
     'Bread',
@@ -28,64 +32,50 @@ class _LandingPageState extends State<LandingPage> {
     'Utensils',
   ];
 
-  late final List<ProductCardData> _products = [
-    ProductCardData(
-      id: 1,
-      title: 'Lomi Panabo',
-      price: 100,
-      category: 'Food',
-      quantityLeft: 8,
-      expiresAt: DateTime.now().add(const Duration(hours: 4, minutes: 20)),
-      imagePath: 'assets/images/Product-image/lomi.png',
-    ),
-    ProductCardData(
-      id: 2,
-      title: 'Sisig',
-      price: 75,
-      category: 'Food',
-      quantityLeft: 5,
-      expiresAt: DateTime.now().add(const Duration(hours: 3, minutes: 30)),
-      imagePath: 'assets/images/Product-image/Sisig.png',
-    ),
-    ProductCardData(
-      id: 3,
-      title: 'Red Onion',
-      price: 30,
-      category: 'Ingredients',
-      quantityLeft: 12,
-      expiresAt: DateTime.now().add(const Duration(hours: 24)),
-      imagePath: 'assets/images/Product-image/bombayy.png',
-    ),
-    ProductCardData(
-      id: 4,
-      title: 'Hamburger',
-      price: 35,
-      category: 'Bread',
-      quantityLeft: 8,
-      expiresAt: DateTime.now().add(const Duration(hours: 1, minutes: 45)),
-      imagePath: 'assets/images/Product-image/hamburger.png',
-    ),
-    ProductCardData(
-      id: 5,
-      title: 'Spices Set',
-      price: 100,
-      category: 'Spices',
-      quantityLeft: 3,
-      expiresAt: DateTime.now().add(const Duration(hours: 24)),
-      imagePath: 'assets/images/Product-image/Spice.png',
-    ),
-    ProductCardData(
-      id: 6,
-      title: 'Plastic bottle',
-      price: 35,
-      category: 'Utensils',
-      quantityLeft: 24,
-      expiresAt: DateTime.now().add(const Duration(hours: 18)),
-      imagePath: 'assets/images/Product-image/Plastic_bottle.png',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    ProductService.stockChanges.addListener(_handleStockChanged);
+    _loadProducts();
+  }
 
-  List<String> get _allCategories => ['All', ..._categories];
+  @override
+  void dispose() {
+    ProductService.stockChanges.removeListener(_handleStockChanged);
+    super.dispose();
+  }
+
+  void _handleStockChanged() {
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    final data = await ProductService().getAll();
+    if (!mounted) return;
+
+    setState(() {
+      _products = data.map(mapProductToCard).toList();
+      _isLoading = false;
+      if (_selectedCategory != 'All' &&
+          !_allCategories.contains(_selectedCategory)) {
+        _selectedCategory = 'All';
+      }
+    });
+  }
+
+  List<String> get _allCategories {
+    final categories = _products.map((p) => p.category).toSet().toList();
+    if (categories.isEmpty) {
+      return ['All', ..._defaultCategories];
+    }
+    categories.sort();
+    return ['All', ...categories];
+  }
 
   List<ProductCardData> get _visibleProducts {
     final DateTime now = DateTime.now();
@@ -154,22 +144,29 @@ class _LandingPageState extends State<LandingPage> {
             ///const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ProductGrid(
-                products: _visibleProducts,
-                onProductTap: (product) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProductDetailPage(
-                        product: product,
-                        relatedProducts: _products,
-                      ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _visibleProducts.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: Text('No products available')),
+                    )
+                  : ProductGrid(
+                      products: _visibleProducts,
+                      onProductTap: (product) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ProductDetailPage(
+                              product: product,
+                              relatedProducts: _products,
+                            ),
+                          ),
+                        );
+                      },
+                      onAddToCart: (product) {
+                        CartFeedback.addProduct(context, product.copy());
+                      },
                     ),
-                  );
-                },
-                onAddToCart: (product) {
-                  CartStore.instance.add(product.copy());
-                },
-              ),
             ),
             const SizedBox(height: 110),
           ],
